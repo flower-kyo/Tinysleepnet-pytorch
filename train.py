@@ -263,16 +263,16 @@ def train(
         # model.train_writer.add_summary(summary, train_outs["global_step"])
         # model.train_writer.flush()
 
-        logger.info("[e{}/{} s{}] TR (n={}) l={:.4f} ({:.1f}s) | " \
-                "VA (n={}) l={:.4f} a={:.1f}, f1={:.1f} ({:.1f}s) | " \
-                "TE (n={}) a={:.1f}, f1={:.1f} ({:.1f}s)".format(
-                epoch+1, config["n_epochs"],
-                train_outs["global_step"],
-                len(train_outs["train/trues"]),
-                # train_outs["train/stream_metrics"]["loss"],
-                # train_outs["train/stream_metrics"]["accuracy"]*100,
-                # train_outs["train/accuracy"]*100,
-                train_outs["train/duration"],
+        # logger.info("[e{}/{} s{}] TR (n={}) l={:.4f} ({:.1f}s) | " \
+        #         "VA (n={}) l={:.4f} a={:.1f}, f1={:.1f} ({:.1f}s) | " \
+        #         "TE (n={}) a={:.1f}, f1={:.1f} ({:.1f}s)".format(
+        #         epoch+1, config["n_epochs"],
+        #         train_outs["global_step"],
+        #         len(train_outs["train/trues"]),
+        #         # train_outs["train/stream_metrics"]["loss"],
+        #         # train_outs["train/stream_metrics"]["accuracy"]*100,
+        #         # train_outs["train/accuracy"]*100,
+        #         train_outs["train/duration"],
                 #
                 # len(valid_outs["test/trues"]),
                 # valid_outs["test/loss"],
@@ -285,33 +285,33 @@ def train(
                 # test_outs["test/accuracy"]*100,
                 # test_outs["test/f1_score"]*100,
                 # test_outs["test/duration"],
-        ))
+        # ))
 
         # Check best model
-        if best_acc < valid_outs["test/accuracy"] and \
-           best_mf1 <= valid_outs["test/f1_score"]:
-            best_acc = valid_outs["test/accuracy"]
-            best_mf1 = valid_outs["test/f1_score"]
-            update_epoch = epoch+1
-            model.save_best_checkpoint(name="best_model")
+        # if best_acc < valid_outs["test/accuracy"] and \
+        #    best_mf1 <= valid_outs["test/f1_score"]:
+        #     best_acc = valid_outs["test/accuracy"]
+        #     best_mf1 = valid_outs["test/f1_score"]
+        #     update_epoch = epoch+1
+        #     model.save_best_checkpoint(name="best_model")
         # if best_mf1 < valid_outs["test/f1_score"]:
         #     best_mf1 = valid_outs["test/f1_score"]
         #     update_epoch = epoch+1
         #     model.save_best_checkpoint(name="best_model")
 
         # Confusion matrix
-        if (epoch+1) % config["evaluate_span"] == 0 or (epoch+1) == config["n_epochs"]:
-            logger.info(">> Confusion Matrix")
-            logger.info(test_outs["test/cm"])
-
-        # Save checkpoint
-        if (epoch+1) % config["checkpoint_span"] == 0 or (epoch+1) == config["n_epochs"]:
-            model.save_checkpoint(name="model")
-
-        # Early stopping
-        if update_epoch > 0 and ((epoch+1) - update_epoch) > config["no_improve_epochs"]:
-            logger.info("*** Early-stopping ***")
-            break
+        # if (epoch+1) % config["evaluate_span"] == 0 or (epoch+1) == config["n_epochs"]:
+        #     logger.info(">> Confusion Matrix")
+        #     logger.info(test_outs["test/cm"])
+        #
+        # # Save checkpoint
+        # if (epoch+1) % config["checkpoint_span"] == 0 or (epoch+1) == config["n_epochs"]:
+        #     model.save_checkpoint(name="model")
+        #
+        # # Early stopping
+        # if update_epoch > 0 and ((epoch+1) - update_epoch) > config["no_improve_epochs"]:
+        #     logger.info("*** Early-stopping ***")
+        #     break
 
 
 if __name__ == "__main__":

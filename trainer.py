@@ -6,7 +6,8 @@ import os
 # import tensorflow as tf
 
 from train import train
-
+# import os
+# os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 def run(args, db, gpu, from_fold, to_fold, suffix='', random_seed=42):
     # Set GPU visible

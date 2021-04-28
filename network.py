@@ -1,6 +1,10 @@
 import torch
 import torch.nn as nn
 import os
+from collections import OrderedDict
+# nn.Sequential(OrderedDict([
+#  ('linear', )
+#  ]))
 
 
 class TinySleepNet(nn.Module):
@@ -18,23 +22,32 @@ class TinySleepNet(nn.Module):
         first_filter_stride = int(self.config["sampling_rate"] / 16.0)  # todo 与论文不同，论文给出的stride是100/4=25
         self.cnn = nn.Sequential(
             nn.ConstantPad1d(self.padding_edf['conv1'], 0),  # conv1
-            nn.Conv1d(in_channels=1, out_channels=128, kernel_size=first_filter_size, stride=first_filter_stride,
-                      bias=False),
+            nn.Sequential(OrderedDict([
+                ('conv1', nn.Conv1d(in_channels=1, out_channels=128, kernel_size=first_filter_size, stride=first_filter_stride,
+                      bias=False))
+            ])),
             nn.BatchNorm1d(128),
             nn.ReLU(inplace=True),
             nn.ConstantPad1d(self.padding_edf['max_pool1'], 0),  # max p 1
             nn.MaxPool1d(kernel_size=8, stride=8),
             nn.Dropout(p=0.5),
             nn.ConstantPad1d(self.padding_edf['conv2'], 0),  # conv2
-            nn.Conv1d(in_channels=128, out_channels=128, kernel_size=8, stride=1, bias=False),
+            nn.Sequential(OrderedDict([
+                ('conv2',
+                 nn.Conv1d(in_channels=128, out_channels=128, kernel_size=8, stride=1, bias=False))
+            ])),
             nn.BatchNorm1d(128),
             nn.ReLU(inplace=True),
             nn.ConstantPad1d(self.padding_edf['conv2'], 0),  # conv3
-            nn.Conv1d(in_channels=128, out_channels=128, kernel_size=8, stride=1, bias=False),
+            nn.Sequential(OrderedDict([
+                ('conv3',nn.Conv1d(in_channels=128, out_channels=128, kernel_size=8, stride=1, bias=False))
+            ])),
             nn.BatchNorm1d(128),
             nn.ReLU(inplace=True),
             nn.ConstantPad1d(self.padding_edf['conv2'], 0),  # conv4
-            nn.Conv1d(in_channels=128, out_channels=128, kernel_size=8, stride=1, bias=False),
+            nn.Sequential(OrderedDict([
+                ('conv4', nn.Conv1d(in_channels=128, out_channels=128, kernel_size=8, stride=1, bias=False))
+            ])),
             nn.BatchNorm1d(128),
             nn.ReLU(inplace=True),
             nn.ConstantPad1d(self.padding_edf['max_pool2'], 0),  # max p 2
@@ -45,6 +58,8 @@ class TinySleepNet(nn.Module):
         self.rnn = nn.LSTM(input_size=2048, hidden_size=self.config['n_rnn_units'], num_layers=1, dropout=0.5)
         self.rnn_dropout = nn.Dropout(p=0.5)
         self.fc = nn.Linear(self.config['n_rnn_units'], 5)
+
+
 
 
 
@@ -68,6 +83,7 @@ if __name__ == '__main__':
     from config.sleepedf import train
 
     model = TinySleepNet(config=train)
+
     summary(model, torch.randn(size=(2, 1, 3000)))
 
 
