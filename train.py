@@ -5,9 +5,6 @@ import os
 import numpy as np
 import shutil
 import torch
-# import mne
-# import tensorflow as tf
-# import matplotlib.pyplot as plt
 
 from data import load_data, get_subject_files
 from model import Model
@@ -122,9 +119,6 @@ def train(
     for _x in test_x: logger.info(_x.shape)
     print_n_samples_each_class(np.hstack(test_y))
 
-    # Add class weights to determine loss
-    # class_weights = compute_portion_each_class(np.hstack(train_y))
-    # config["class_weights"] = 1. - class_weights
     # Force to use 1.5 only for N1
     if config.get('weighted_cross_ent') is None:
         config['weighted_cross_ent'] = False
@@ -149,30 +143,10 @@ def train(
         device=device
     )
 
-
-
     # Data Augmentation Details
     logger.info('Data Augmentation')
-    if config.get('augment_seq') is None:
-        config['augment_seq'] = False
-        logger.info(f'  Sequence: Not specified --> default: {config["augment_seq"]}')
-    else:
-        logger.info(f'  Sequence: {config["augment_seq"]}')
-
-    if config.get('augment_signal') is None:
-        config['augment_signal'] = False
-        logger.info(f'  Signal: Not specified --> default: {config["augment_signal"]}')
-    else:
-        logger.info(f'  Signal: {config["augment_signal"]}')
-
-    if config.get('augment_signal_full') is None:
-        config['augment_signal_full'] = False
-        logger.info(f'  Signal full: Not specified --> default: {config["augment_signal_full"]}')
-    else:
-        logger.info(f'  Signal full: {config["augment_signal_full"]}')
-
-    if config.get('augment_signal') and config.get('augment_signal_full'):
-        raise Exception('augment_signal and augment_signal_full cannot be True together.!!')
+    logger.info(f'  Sequence: {config["augment_seq"]}')
+    logger.info(f'  Signal full: {config["augment_signal_full"]}')
 
     # Train using epoch scheme
     best_acc = -1
@@ -181,7 +155,6 @@ def train(
     for epoch in range(model.get_current_epoch(), config["n_epochs"]):
         # Create minibatches for training
         shuffle_idx = np.random.permutation(np.arange(len(train_x)))  # shuffle every epoch is good for generalization
-        # elif config['augment_signal_full']:  # 信号滚动在这里完成
         # Create augmented data
         percent = 0.1
         aug_train_x = np.copy(train_x)
@@ -197,9 +170,7 @@ def train(
                 aug_train_x[i] = roll_x[1:]
                 aug_train_y[i] = aug_train_y[i][1:]
             roll_x = None
-
             assert len(aug_train_x[i]) == len(aug_train_y[i])
-
         aug_minibatch_fn = iterate_batch_multiple_seq_minibatches(
             aug_train_x,
             aug_train_y,
@@ -209,84 +180,58 @@ def train(
             augment_seq=config['augment_seq'],
         )
         # Train, one epoch,
-
         train_outs = model.train_with_dataloader(aug_minibatch_fn)  # 只使用增强后的数据进行训练， 每个epoch进行一次数据增强
         # todo add a bank, and clustering, using protoNCE
 
         # Create minibatches for validation
 
-        # valid_minibatch_fn = iterate_batch_multiple_seq_minibatches(
-        #     valid_x,
-        #     valid_y,
-        #     batch_size=config["batch_size"],
-        #     seq_length=config["seq_length"],
-        #     shuffle_idx=None,
-        #     augment_seq=False,
-        # )
-        # if config['augment_signal']:
-        #     # Evaluate
-        #     valid_outs = model.evaluate_aug(valid_minibatch_fn)
-        # else:
-        #     # Evaluate
-        #     valid_outs = model.evaluate(valid_minibatch_fn)
-        #
-        # # Create minibatches for testing
-        # test_minibatch_fn = iterate_batch_multiple_seq_minibatches(
-        #     test_x,
-        #     test_y,
-        #     # batch_size=config["batch_size"],
-        #     # seq_length=config["seq_length"],
-        #     batch_size=args.test_batch_size,
-        #     seq_length=args.test_seq_len,
-        #     shuffle_idx=None,
-        #     augment_seq=False,
-        # )
-        # if config['augment_signal']:
-        #     # Evaluate
-        #     test_outs = model.evaluate_aug(test_minibatch_fn)
-        # else:
-        #     # Evaluate
-        #     test_outs = model.evaluate(test_minibatch_fn)
+        valid_minibatch_fn = iterate_batch_multiple_seq_minibatches(
+            valid_x,
+            valid_y,
+            batch_size=config["batch_size"],
+            seq_length=config["seq_length"],
+            shuffle_idx=None,
+            augment_seq=False,
+        )
+        valid_outs = model.evaluate_with_dataloader(valid_minibatch_fn)
 
-        # Training summary
-        # summary = tf.Summary()
-        # summary.value.add(tag="lr", simple_value=model.run(model.lr))
-        # summary.value.add(tag="e_losses/train", simple_value=train_outs["train/stream_metrics"]["loss"])
-        # summary.value.add(tag="e_losses/valid", simple_value=valid_outs["test/loss"])
-        # summary.value.add(tag="e_losses/test", simple_value=test_outs["test/loss"])
-        # summary.value.add(tag="e_accuracy/train", simple_value=train_outs["train/accuracy"]*100)
-        # summary.value.add(tag="e_accuracy/valid", simple_value=valid_outs["test/accuracy"]*100)
-        # summary.value.add(tag="e_accuracy/test", simple_value=test_outs["test/accuracy"]*100)
-        # summary.value.add(tag="e_f1_score/train", simple_value=train_outs["train/f1_score"]*100)
-        # summary.value.add(tag="e_f1_score/valid", simple_value=valid_outs["test/f1_score"]*100)
-        # summary.value.add(tag="e_f1_score/test", simple_value=test_outs["test/f1_score"]*100)
-        # model.train_writer.add_summary(summary, train_outs["global_step"])
-        # model.train_writer.flush()
+        # Create minibatches for testing
+        test_minibatch_fn = iterate_batch_multiple_seq_minibatches(
+            test_x,
+            test_y,
+            batch_size=config["batch_size"],
+            seq_length=config["seq_length"],
+            shuffle_idx=None,
+            augment_seq=False,
+        )
+        test_outs = model.evaluate_with_dataloader(test_minibatch_fn)
 
-        # logger.info("[e{}/{} s{}] TR (n={}) l={:.4f} ({:.1f}s) | " \
-        #         "VA (n={}) l={:.4f} a={:.1f}, f1={:.1f} ({:.1f}s) | " \
-        #         "TE (n={}) a={:.1f}, f1={:.1f} ({:.1f}s)".format(
-        #         epoch+1, config["n_epochs"],
-        #         train_outs["global_step"],
-        #         len(train_outs["train/trues"]),
-        #         # train_outs["train/stream_metrics"]["loss"],
-        #         # train_outs["train/stream_metrics"]["accuracy"]*100,
-        #         # train_outs["train/accuracy"]*100,
-        #         train_outs["train/duration"],
-                #
-                # len(valid_outs["test/trues"]),
-                # valid_outs["test/loss"],
-                # valid_outs["test/accuracy"]*100,
-                # valid_outs["test/f1_score"]*100,
-                # valid_outs["test/duration"],
-                #
-                # len(test_outs["test/trues"]),
-                # # test_outs["test/loss"],
-                # test_outs["test/accuracy"]*100,
-                # test_outs["test/f1_score"]*100,
-                # test_outs["test/duration"],
-        # ))
 
+        logger.info("[e{}/{} s{}] TR (n={}) l={:.4f} a={:.1f} f1={:.1f} ({:.1f}s)| "
+                    "VA (n={}) l={:.4f} a={:.1f}, f1={:.1f} ({:.1f}s) | "
+                    "TE (n={}) l={:.4f} a={:.1f}, f1={:.1f} ({:.1f}s)".format(
+            epoch+1,
+            config["n_epochs"],
+            train_outs["global_step"],
+            len(train_outs["train/trues"]),
+            train_outs["train/loss"],
+            train_outs["train/accuracy"] * 100,
+            train_outs["train/f1_score"] * 100,
+            train_outs["train/duration"],
+
+            len(valid_outs["test/trues"]),
+            valid_outs["test/loss"],
+            valid_outs["test/accuracy"] * 100,
+            valid_outs["test/f1_score"] * 100,
+            valid_outs["test/duration"],
+
+            len(test_outs["test/trues"]),
+            test_outs["test/loss"],
+            test_outs["test/accuracy"] * 100,
+            test_outs["test/f1_score"] * 100,
+            test_outs["test/duration"],
+            )
+        )
         # Check best model
         # if best_acc < valid_outs["test/accuracy"] and \
         #    best_mf1 <= valid_outs["test/f1_score"]:

@@ -62,7 +62,7 @@ def iterate_batch_multiple_seq_minibatches(inputs, targets, batch_size, seq_leng
     targets. It will append the input sequence with 0 and target with -1 when
     the lenght of each sequence is not equal.
     """
-    print(f"using batch_size{batch_size}, seq_length{seq_length}")
+    # print(f"using batch_size{batch_size}, seq_length{seq_length}")
     assert len(inputs) == len(targets)
     n_inputs = len(inputs)
 

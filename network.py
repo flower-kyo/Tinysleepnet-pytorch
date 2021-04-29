@@ -1,14 +1,9 @@
 import torch
 import torch.nn as nn
-import os
 from collections import OrderedDict
-# nn.Sequential(OrderedDict([
-#  ('linear', )
-#  ]))
 
 
 class TinySleepNet(nn.Module):
-
     def __init__(self, config):
         super(TinySleepNet, self).__init__()
         self.padding_edf = {  # same padding in tensorflow
@@ -55,8 +50,9 @@ class TinySleepNet(nn.Module):
             nn.Flatten(),
             nn.Dropout(p=0.5),
         )
-        self.rnn = nn.LSTM(input_size=2048, hidden_size=self.config['n_rnn_units'], num_layers=1, dropout=0.5)
-        self.rnn_dropout = nn.Dropout(p=0.5)
+        # self.rnn = nn.LSTM(input_size=2048, hidden_size=self.config['n_rnn_units'], num_layers=1, dropout=0.5)
+        self.rnn = nn.LSTM(input_size=2048, hidden_size=self.config['n_rnn_units'], num_layers=1)
+        self.rnn_dropout = nn.Dropout(p=0.5)  # todo 是否需要这个dropout?
         self.fc = nn.Linear(self.config['n_rnn_units'], 5)
 
 
@@ -83,8 +79,11 @@ if __name__ == '__main__':
     from config.sleepedf import train
 
     model = TinySleepNet(config=train)
-
-    summary(model, torch.randn(size=(2, 1, 3000)))
+    state = (torch.zeros(size=(1, 2, 128)),
+             torch.zeros(size=(1, 2, 128)))
+    torch
+    # state = (state[0].to(self.device), state[1].to(self.device))
+    summary(model, torch.randn(size=(2, 1, 3000)), state)
 
 
 
