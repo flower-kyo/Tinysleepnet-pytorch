@@ -6,7 +6,6 @@ import numpy as np
 import sklearn.metrics as skmetrics
 from network import TinySleepNet
 from torch.optim import Adam
-from torchsummaryX import summary
 
 class Model:
     def __init__(self, config=None, output_dir="./output", use_rnn=False, testing=False, use_best=False, device=None):
@@ -70,9 +69,9 @@ class Model:
             sample_weight = torch.mm(one_hot, torch.Tensor(self.config["class_weights"]).to(self.device).unsqueeze(dim=1)).view(-1)  # (300, 5) * (5,) = (300,)
             loss = torch.mul(loss, sample_weight).sum() / w.sum()
 
+
             loss.backward()
-            nn.utils.clip_grad_norm_(parameters=list(self.tsn.cnn.parameters()) + list(self.tsn.rnn.parameters()) +
-                                                list(self.tsn.fc.parameters()), max_norm=self.config["clip_grad_value"], norm_type=2)
+            nn.utils.clip_grad_norm_(self.tsn.parameters(), max_norm=self.config["clip_grad_value"], norm_type=2)
             self.optimizer_all.step()
             losses.append(loss.detach().cpu().numpy())
             self.global_step += 1

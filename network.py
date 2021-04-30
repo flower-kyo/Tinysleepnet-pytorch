@@ -22,7 +22,8 @@ class TinySleepNet(nn.Module):
                       bias=False))
             ])),
             # nn.BatchNorm1d(128),
-            nn.BatchNorm1d(num_features=128, eps=0.001, momentum=0.99),
+            # nn.BatchNorm1d(num_features=128, eps=0.001, momentum=0.99),
+            nn.BatchNorm1d(num_features=128, eps=0.001, momentum=0.01),
             nn.ReLU(inplace=True),
             nn.ConstantPad1d(self.padding_edf['max_pool1'], 0),  # max p 1
             nn.MaxPool1d(kernel_size=8, stride=8),
@@ -33,21 +34,26 @@ class TinySleepNet(nn.Module):
                  nn.Conv1d(in_channels=128, out_channels=128, kernel_size=8, stride=1, bias=False))
             ])),
             # nn.BatchNorm1d(128),
-            nn.BatchNorm1d(num_features=128, eps=0.001, momentum=0.99),
+            # nn.BatchNorm1d(num_features=128, eps=0.001, momentum=0.99),
+            nn.BatchNorm1d(num_features=128, eps=0.001, momentum=0.01),
+
             nn.ReLU(inplace=True),
             nn.ConstantPad1d(self.padding_edf['conv2'], 0),  # conv3
             nn.Sequential(OrderedDict([
                 ('conv3',nn.Conv1d(in_channels=128, out_channels=128, kernel_size=8, stride=1, bias=False))
             ])),
             # nn.BatchNorm1d(128),
-            nn.BatchNorm1d(num_features=128, eps=0.001, momentum=0.99),
+            # nn.BatchNorm1d(num_features=128, eps=0.001, momentum=0.99),
+            nn.BatchNorm1d(num_features=128, eps=0.001, momentum=0.01),
+
             nn.ReLU(inplace=True),
             nn.ConstantPad1d(self.padding_edf['conv2'], 0),  # conv4
             nn.Sequential(OrderedDict([
                 ('conv4', nn.Conv1d(in_channels=128, out_channels=128, kernel_size=8, stride=1, bias=False))
             ])),
             # nn.BatchNorm1d(128),
-            nn.BatchNorm1d(num_features=128, eps=0.001, momentum=0.99),
+            # nn.BatchNorm1d(num_features=128, eps=0.001, momentum=0.99),
+            nn.BatchNorm1d(num_features=128, eps=0.001, momentum=0.01),
             nn.ReLU(inplace=True),
             nn.ConstantPad1d(self.padding_edf['max_pool2'], 0),  # max p 2
             nn.MaxPool1d(kernel_size=4, stride=4),
