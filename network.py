@@ -3,6 +3,7 @@ import torch.nn as nn
 from collections import OrderedDict
 
 
+
 class TinySleepNet(nn.Module):
     def __init__(self, config):
         super(TinySleepNet, self).__init__()
@@ -50,10 +51,19 @@ class TinySleepNet(nn.Module):
             nn.Flatten(),
             nn.Dropout(p=0.5),
         )
-        # self.rnn = nn.LSTM(input_size=2048, hidden_size=self.config['n_rnn_units'], num_layers=1, dropout=0.5)
-        self.rnn = nn.LSTM(input_size=2048, hidden_size=self.config['n_rnn_units'], num_layers=1)
+        self.rnn = nn.LSTM(input_size=2048, hidden_size=self.config['n_rnn_units'], num_layers=1, dropout=0.5)
+        # self.rnn = nn.LSTM(input_size=2048, hidden_size=self.config['n_rnn_units'], num_layers=1)
         self.rnn_dropout = nn.Dropout(p=0.5)  # todo 是否需要这个dropout?
         self.fc = nn.Linear(self.config['n_rnn_units'], 5)
+        self._init_parameters()
+
+    def _init_parameters(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv1d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+
+
+
 
 
 
