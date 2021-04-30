@@ -1,8 +1,8 @@
 # todo list
-1. 每个batch 是否需要detach？ 先使用detach试试效果
-2. conv和lstm是否使用bias？ 先使用bias试试。
+1. ~~每个batch 是否需要detach？ 先使用detach试试效果~~
+2. ~~conv和lstm是否使用bias？ 先使用bias试试。~~
 
-
+~~batch norm的参数不一致， 已修改为一致。~~
 
 torch版本的效果并不好，查找原因：
 
@@ -13,4 +13,8 @@ torch版本的效果并不好，查找原因：
 优化器问题？
 
 梯度裁剪问题？
+
+
+
+
 

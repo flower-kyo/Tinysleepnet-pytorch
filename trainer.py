@@ -50,6 +50,7 @@ if __name__ == '__main__':
     parser.add_argument("--random_seed", type=int, default=42)
     parser.add_argument("--test_seq_len", type=int, default=20)
     parser.add_argument("--test_batch_size", type=int, default=15)
+    parser.add_argument("--n_epochs", type=int, default=200)
     args = parser.parse_args()
 
     run(

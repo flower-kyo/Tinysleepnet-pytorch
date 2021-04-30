@@ -152,6 +152,7 @@ def train(
     best_acc = -1
     best_mf1 = -1
     update_epoch = -1
+    config["n_epochs"] = args.n_epochs
     for epoch in range(model.get_current_epoch(), config["n_epochs"]):
         # Create minibatches for training
         shuffle_idx = np.random.permutation(np.arange(len(train_x)))  # shuffle every epoch is good for generalization
