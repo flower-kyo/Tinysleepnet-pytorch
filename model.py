@@ -70,6 +70,7 @@ class Model:
             loss = torch.mul(loss, sample_weight).sum() / w.sum()
 
 
+
             loss.backward()
             nn.utils.clip_grad_norm_(self.tsn.parameters(), max_norm=self.config["clip_grad_value"], norm_type=2)
             self.optimizer_all.step()
