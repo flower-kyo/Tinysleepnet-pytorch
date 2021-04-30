@@ -3,7 +3,6 @@ import torch.nn as nn
 from collections import OrderedDict
 
 
-
 class TinySleepNet(nn.Module):
     def __init__(self, config):
         super(TinySleepNet, self).__init__()
@@ -22,7 +21,8 @@ class TinySleepNet(nn.Module):
                 ('conv1', nn.Conv1d(in_channels=1, out_channels=128, kernel_size=first_filter_size, stride=first_filter_stride,
                       bias=False))
             ])),
-            nn.BatchNorm1d(128),
+            # nn.BatchNorm1d(128),
+            nn.BatchNorm1d(num_features=128, eps=0.001, momentum=0.99),
             nn.ReLU(inplace=True),
             nn.ConstantPad1d(self.padding_edf['max_pool1'], 0),  # max p 1
             nn.MaxPool1d(kernel_size=8, stride=8),
@@ -32,37 +32,32 @@ class TinySleepNet(nn.Module):
                 ('conv2',
                  nn.Conv1d(in_channels=128, out_channels=128, kernel_size=8, stride=1, bias=False))
             ])),
-            nn.BatchNorm1d(128),
+            # nn.BatchNorm1d(128),
+            nn.BatchNorm1d(num_features=128, eps=0.001, momentum=0.99),
             nn.ReLU(inplace=True),
             nn.ConstantPad1d(self.padding_edf['conv2'], 0),  # conv3
             nn.Sequential(OrderedDict([
                 ('conv3',nn.Conv1d(in_channels=128, out_channels=128, kernel_size=8, stride=1, bias=False))
             ])),
-            nn.BatchNorm1d(128),
+            # nn.BatchNorm1d(128),
+            nn.BatchNorm1d(num_features=128, eps=0.001, momentum=0.99),
             nn.ReLU(inplace=True),
             nn.ConstantPad1d(self.padding_edf['conv2'], 0),  # conv4
             nn.Sequential(OrderedDict([
                 ('conv4', nn.Conv1d(in_channels=128, out_channels=128, kernel_size=8, stride=1, bias=False))
             ])),
-            nn.BatchNorm1d(128),
+            # nn.BatchNorm1d(128),
+            nn.BatchNorm1d(num_features=128, eps=0.001, momentum=0.99),
             nn.ReLU(inplace=True),
             nn.ConstantPad1d(self.padding_edf['max_pool2'], 0),  # max p 2
             nn.MaxPool1d(kernel_size=4, stride=4),
             nn.Flatten(),
             nn.Dropout(p=0.5),
         )
-        self.rnn = nn.LSTM(input_size=2048, hidden_size=self.config['n_rnn_units'], num_layers=1, dropout=0.5)
-        # self.rnn = nn.LSTM(input_size=2048, hidden_size=self.config['n_rnn_units'], num_layers=1)
+        # self.rnn = nn.LSTM(input_size=2048, hidden_size=self.config['n_rnn_units'], num_layers=1, dropout=0.5)
+        self.rnn = nn.LSTM(input_size=2048, hidden_size=self.config['n_rnn_units'], num_layers=1)
         self.rnn_dropout = nn.Dropout(p=0.5)  # todo 是否需要这个dropout?
         self.fc = nn.Linear(self.config['n_rnn_units'], 5)
-        self._init_parameters()
-
-    def _init_parameters(self):
-        for m in self.modules():
-            if isinstance(m, nn.Conv1d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-
-
 
 
 

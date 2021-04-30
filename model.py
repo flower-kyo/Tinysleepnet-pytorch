@@ -6,7 +6,7 @@ import numpy as np
 import sklearn.metrics as skmetrics
 from network import TinySleepNet
 from torch.optim import Adam
-# from torchsummaryX import summary
+from torchsummaryX import summary
 
 class Model:
     def __init__(self, config=None, output_dir="./output", use_rnn=False, testing=False, use_best=False, device=None):
@@ -22,7 +22,7 @@ class Model:
 
         # weight_decay only apply on cnn, and cnn has no bias
         self.optimizer_all = Adam(
-            [{'params': [parm for name, parm in self.tsn.cnn.named_parameters() if 'conv' in name]},  # cnn, l2
+            [{'params': [parm for name, parm in self.tsn.cnn.named_parameters() if 'conv' in name], 'weight_decay': self.config['l2_weight_decay']},  # cnn, l2
              {'params': [parm for name, parm in self.tsn.cnn.named_parameters() if 'conv' not in name]},
              {'params': [parm for name, parm in self.tsn.rnn.named_parameters()]},
              {'params': [parm for name, parm in self.tsn.fc.named_parameters()]}],
@@ -60,7 +60,6 @@ class Model:
             y_pred, state = self.tsn.forward(x, state)
             state = (state[0].detach(), state[1].detach())
             loss = self.CE_loss(y_pred, y)
-
             # weight by sample
             loss = torch.mul(loss, w)
             # Weight by class
@@ -68,14 +67,6 @@ class Model:
             sample_weight = torch.mm(one_hot, torch.Tensor(self.config["class_weights"]).to(self.device).unsqueeze(dim=1)).view(-1)  # (300, 5) * (5,) = (300,)
             loss = torch.mul(loss, sample_weight).sum() / w.sum()
 
-            cnn_weights = [parm for name, parm in self.tsn.cnn.named_parameters() if 'conv' in name]
-            reg_loss = 0
-            for p in cnn_weights:
-                reg_loss += torch.sum(p ** 2) / 2
-            reg_loss = self.config["l2_weight_decay"] * reg_loss
-            ce_loss = loss
-            # print(f"ce loss {ce_loss:.2f}, reg loss {reg_loss:.2f}")
-            loss = loss + reg_loss
             loss.backward()
             nn.utils.clip_grad_norm_(parameters=list(self.tsn.cnn.parameters()) + list(self.tsn.rnn.parameters()) +
                                                 list(self.tsn.fc.parameters()), max_norm=self.config["clip_grad_value"], norm_type=2)
