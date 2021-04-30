@@ -21,11 +21,14 @@ class Model:
         self.tsn.to(device)
 
         # weight_decay only apply on cnn, and cnn has no bias
-        self.optimizer_all = Adam(
-            [{'params': [parm for name, parm in self.tsn.cnn.named_parameters() if 'conv' in name], 'weight_decay': self.config['l2_weight_decay']},  # cnn, l2
-             {'params': [parm for name, parm in self.tsn.cnn.named_parameters() if 'conv' not in name]},
-             {'params': [parm for name, parm in self.tsn.rnn.named_parameters()]},
-             {'params': [parm for name, parm in self.tsn.fc.named_parameters()]}],
+        # self.optimizer_all = Adam(
+        #     [{'params': [parm for name, parm in self.tsn.cnn.named_parameters() if 'conv' in name], 'weight_decay': self.config['l2_weight_decay']},  # cnn, l2
+        #      {'params': [parm for name, parm in self.tsn.cnn.named_parameters() if 'conv' not in name]},
+        #      {'params': [parm for name, parm in self.tsn.rnn.named_parameters()]},
+        #      {'params': [parm for name, parm in self.tsn.fc.named_parameters()]}],
+        #     lr=config['learning_rate'], betas=(config["adam_beta_1"], config["adam_beta_2"]),
+        #     eps=config["adam_epsilon"])
+        self.optimizer_all = Adam(self.tsn.parameters(),
             lr=config['learning_rate'], betas=(config["adam_beta_1"], config["adam_beta_2"]),
             eps=config["adam_epsilon"])
         self.CE_loss = nn.CrossEntropyLoss(reduce=False)

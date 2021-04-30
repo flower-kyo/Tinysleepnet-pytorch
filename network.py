@@ -69,10 +69,11 @@ class TinySleepNet(nn.Module):
         x = self.cnn(x)
         # input of LSTM must be shape(seq_len, batch, input_size)
         # x = x.view(self.config['seq_length'], self.config['batch_size'], -1)
-        x = x.view(self.config['batch_size'], self.config['seq_length'], -1)  # batch first == True
+        x = x.view(-1, self.config['seq_length'], 2048)  # batch first == True
         assert x.shape[-1] == 2048
         x, state = self.rnn(x, state)
-        x = x.view(-1, self.config['n_rnn_units'])
+        # x = x.view(-1, self.config['n_rnn_units'])
+        x = x.reshape(-1, self.config['n_rnn_units'])
         # rnn output shape(seq_length, batch_size, hidden_size)
         x = self.rnn_dropout(x)
         x = self.fc(x)
