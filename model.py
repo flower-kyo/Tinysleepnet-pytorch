@@ -69,6 +69,14 @@ class Model:
             sample_weight = torch.mm(one_hot, torch.Tensor(self.config["class_weights"]).to(self.device).unsqueeze(dim=1)).view(-1)  # (300, 5) * (5,) = (300,)
             loss = torch.mul(loss, sample_weight).sum() / w.sum()
 
+            cnn_weights = [parm for name, parm in self.tsn.cnn.named_parameters() if 'conv' in name]
+            reg_loss = 0
+            for p in cnn_weights:
+                reg_loss += torch.sum(p ** 2) / 2
+            reg_loss = self.config["l2_weight_decay"] * reg_loss
+            ce_loss = loss
+            # print(f"ce loss {ce_loss:.2f}, reg loss {reg_loss:.2f}")
+            loss = loss + reg_loss
 
 
             loss.backward()
