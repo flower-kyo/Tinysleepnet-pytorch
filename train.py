@@ -8,19 +8,9 @@ import torch
 
 from data import load_data, get_subject_files
 from model import Model
-from minibatching import (iterate_minibatches,
-                          iterate_batch_seq_minibatches,
-                          iterate_batch_multiple_seq_minibatches)
-from utils import (get_balance_class_oversample,
-                   print_n_samples_each_class,
-                   compute_portion_each_class,
-                   save_seq_ids,
-                   load_seq_ids)
+from minibatching import iterate_batch_multiple_seq_minibatches
+from utils import print_n_samples_each_class, load_seq_ids
 from logger import get_logger
-
-import logging
-# tf.get_logger().setLevel(logging.ERROR)
-
 
 def train(
     args,
@@ -36,8 +26,6 @@ def train(
     spec.loader.exec_module(config)
     config = config.train
 
-
-
     # Create output directory for the specified fold_idx
     output_dir = os.path.join(output_dir, str(fold_idx))
     if restart:
@@ -47,7 +35,6 @@ def train(
     else:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-
     # Create logger
     logger = get_logger(log_file, level="info")
 
@@ -182,10 +169,7 @@ def train(
         )
         # Train, one epoch,
         train_outs = model.train_with_dataloader(aug_minibatch_fn)  # 只使用增强后的数据进行训练， 每个epoch进行一次数据增强
-        # todo add a bank, and clustering, using protoNCE
-
         # Create minibatches for validation
-
         valid_minibatch_fn = iterate_batch_multiple_seq_minibatches(
             valid_x,
             valid_y,
@@ -207,6 +191,19 @@ def train(
         )
         test_outs = model.evaluate_with_dataloader(test_minibatch_fn)
 
+        writer = model.train_writer
+        writer.add_scalar(tag="e_losses/train", scalar_value=train_outs["train/loss"], global_step=train_outs["global_step"])
+        writer.add_scalar(tag="e_losses/valid", scalar_value=valid_outs["test/loss"], global_step=train_outs["global_step"])
+        writer.add_scalar(tag="e_losses/test", scalar_value=test_outs["test/loss"], global_step=train_outs["global_step"])
+        writer.add_scalar(tag="e_losses/epoch", scalar_value=epoch + 1, global_step=train_outs["global_step"])
+        writer.add_scalar(tag="e_accuracy/train", scalar_value=train_outs["train/accuracy"], global_step=train_outs["global_step"])
+        writer.add_scalar(tag="e_accuracy/valid", scalar_value=valid_outs["test/accuracy"], global_step=train_outs["global_step"])
+        writer.add_scalar(tag="e_accuracy/test", scalar_value=test_outs["test/accuracy"], global_step=train_outs["global_step"])
+        writer.add_scalar(tag="e_accuracy/epoch", scalar_value=epoch + 1, global_step=train_outs["global_step"])
+        writer.add_scalar(tag="e_f1_score/train", scalar_value=train_outs["train/f1_score"], global_step=train_outs["global_step"])
+        writer.add_scalar(tag="e_f1_score/valid", scalar_value=valid_outs["test/f1_score"], global_step=train_outs["global_step"])
+        writer.add_scalar(tag="e_f1_score/test", scalar_value=test_outs["test/f1_score"], global_step=train_outs["global_step"])
+        writer.add_scalar(tag="e_f1_score/epoch", scalar_value=epoch + 1, global_step=train_outs["global_step"])
 
         logger.info("[e{}/{} s{}] TR (n={}) l={:.4f} a={:.1f} f1={:.1f} ({:.1f}s)| "
                     "VA (n={}) l={:.4f} a={:.1f}, f1={:.1f} ({:.1f}s) | "
@@ -234,21 +231,17 @@ def train(
             )
         )
         # Check best model
-        # if best_acc < valid_outs["test/accuracy"] and \
-        #    best_mf1 <= valid_outs["test/f1_score"]:
-        #     best_acc = valid_outs["test/accuracy"]
-        #     best_mf1 = valid_outs["test/f1_score"]
-        #     update_epoch = epoch+1
-        #     model.save_best_checkpoint(name="best_model")
-        # if best_mf1 < valid_outs["test/f1_score"]:
-        #     best_mf1 = valid_outs["test/f1_score"]
-        #     update_epoch = epoch+1
-        #     model.save_best_checkpoint(name="best_model")
+        if best_acc < valid_outs["test/accuracy"] and \
+           best_mf1 <= valid_outs["test/f1_score"]:
+            best_acc = valid_outs["test/accuracy"]
+            best_mf1 = valid_outs["test/f1_score"]
+            update_epoch = epoch+1
+            model.save_best_checkpoint(name="best_model")
 
         # Confusion matrix
-        # if (epoch+1) % config["evaluate_span"] == 0 or (epoch+1) == config["n_epochs"]:
-        #     logger.info(">> Confusion Matrix")
-        #     logger.info(test_outs["test/cm"])
+        if (epoch+1) % config["evaluate_span"] == 0 or (epoch+1) == config["n_epochs"]:
+            logger.info(">> Confusion Matrix")
+            logger.info(test_outs["test/cm"])
         #
         # # Save checkpoint
         # if (epoch+1) % config["checkpoint_span"] == 0 or (epoch+1) == config["n_epochs"]:

@@ -6,6 +6,10 @@ import numpy as np
 import sklearn.metrics as skmetrics
 from network import TinySleepNet
 from torch.optim import Adam
+from tensorboardX import SummaryWriter
+import logging
+logger = logging.getLogger("default_log")
+
 
 class Model:
     def __init__(self, config=None, output_dir="./output", use_rnn=False, testing=False, use_best=False, device=None):
@@ -32,8 +36,23 @@ class Model:
             eps=config["adam_epsilon"])
         self.CE_loss = nn.CrossEntropyLoss(reduce=False)
 
+        self.train_writer = SummaryWriter(os.path.join(self.log_dir, "train"))
+        self.train_writer.add_graph(self.tsn, input_to_model=(torch.rand(size=(self.config['batch_size']*self.config['seq_length'], 1, 3000)).to(device), (torch.zeros(size=(1, self.config['batch_size'], 128)).to(device), torch.zeros(size=(1, self.config['batch_size'], 128)).to(device))))
         self.global_epoch = 0
         self.global_step = 0
+
+        if testing and use_best:  # load form best checkpoint
+            best_ckpt_path = os.path.join(self.best_ckpt_path, "best_model.ckpt")
+            self.tsn.load_state_dict(torch.load(best_ckpt_path))
+            logger.info(f'load best model from {best_ckpt_path}')
+
+
+
+
+
+
+
+
 
     def get_current_epoch(self):
         return self.global_epoch
@@ -168,6 +187,15 @@ class Model:
             "test/duration": duration,
         }
         return outputs
+
+    def save_best_checkpoint(self, name):
+        if not os.path.exists(self.best_ckpt_path):
+            os.makedirs(self.best_ckpt_path)
+        save_path = os.path.join(self.best_ckpt_path, "{}.ckpt".format(name))
+        torch.save(self.tsn.state_dict(), save_path)
+        logger.info("Saved best checkpoint to {}".format(save_path))
+
+
 
 
 if __name__ == '__main__':
