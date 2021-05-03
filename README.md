@@ -1,4 +1,4 @@
-Tinysleepnet implemented with Pytorch.
+## Tinysleepnet implemented with Pytorch
 
 click to read more about [Tinysleepnet](https://github.com/akaraspt/tinysleepnet).
 

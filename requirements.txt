@@ -1,0 +1,11 @@
+numpy>=1.16.1
+pandas>=0.24.1
+scikit-learn>=0.20.3
+scipy>=1.2.1
+matplotlib>=3.0.2
+pyEDFlib==0.1.19
+mne==0.18.2
+wget
+torch==1.6.0
+tensorboard==2.5.0
+tensorboardX==2.2
