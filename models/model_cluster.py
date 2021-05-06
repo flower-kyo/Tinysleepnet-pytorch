@@ -1,19 +1,24 @@
+"""
+add cluster layer upon tinysleepnet.
+"""
 import torch
 import torch.nn as nn
 import os
 import timeit
 import numpy as np
 import sklearn.metrics as skmetrics
-from network import TinySleepNet
+from networks.tinysleepnet import TinySleepNet
+from networks.contrastive import MLP
 from torch.optim import Adam
 from tensorboardX import SummaryWriter
 import logging
 logger = logging.getLogger("default_log")
 
 
-class Model:
-    def __init__(self, config=None, output_dir="./output", use_rnn=False, testing=False, use_best=False, device=None):
+class ClsuterModel:
+    def __init__(self, args, config=None, output_dir="./output", use_rnn=False, testing=False, use_best=False, device=None):
         self.tsn = TinySleepNet(config)
+        self.mlp = MLP(dim_mlp=2048, dim_nce=args.dim_nce, l2_norm=True)
         self.config = config
         self.output_dir = output_dir
         self.checkpoint_path = os.path.join(self.output_dir, "checkpoint")
@@ -35,6 +40,7 @@ class Model:
             lr=config['learning_rate'], betas=(config["adam_beta_1"], config["adam_beta_2"]),
             eps=config["adam_epsilon"])
         self.CE_loss = nn.CrossEntropyLoss(reduce=False)
+        self.infoNCE = nn.CrossEntropyLoss()
 
         self.train_writer = SummaryWriter(os.path.join(self.log_dir, "train"))
         self.train_writer.add_graph(self.tsn, input_to_model=(torch.rand(size=(self.config['batch_size']*self.config['seq_length'], 1, 3000)).to(device), (torch.zeros(size=(1, self.config['batch_size'], 128)).to(device), torch.zeros(size=(1, self.config['batch_size'], 128)).to(device))))
@@ -45,14 +51,6 @@ class Model:
             best_ckpt_path = os.path.join(self.best_ckpt_path, "best_model.ckpt")
             self.tsn.load_state_dict(torch.load(best_ckpt_path))
             logger.info(f'load best model from {best_ckpt_path}')
-
-
-
-
-
-
-
-
 
     def get_current_epoch(self):
         return self.global_epoch
@@ -96,7 +94,6 @@ class Model:
             ce_loss = loss
             # print(f"ce loss {ce_loss:.2f}, reg loss {reg_loss:.2f}")
             loss = loss + reg_loss
-
 
             loss.backward()
             nn.utils.clip_grad_norm_(self.tsn.parameters(), max_norm=self.config["clip_grad_value"], norm_type=2)

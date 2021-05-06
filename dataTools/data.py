@@ -5,7 +5,7 @@ import numpy as np
 
 
 def get_subject_files(dataset, files, sid):
-    """Get a list of files storing each subject data."""
+    """Get a list of files storing each subject dataTools."""
 
     # Pattern of the subject files from different datasets
     if "mass" in dataset:
@@ -30,7 +30,7 @@ def get_subject_files(dataset, files, sid):
 
 
 def load_data(subject_files):
-    """Load data from subject files."""
+    """Load dataTools from subject files."""
 
     signals = []
     labels = []
@@ -46,7 +46,7 @@ def load_data(subject_files):
             elif sampling_rate != fs:
                 raise Exception("Mismatch sampling rate.")
 
-            # Reshape the data to match the input of the model - conv2d
+            # Reshape the dataTools to match the input of the model - conv2d
             x = np.squeeze(x)
             x = x[:, :, np.newaxis, np.newaxis]
 

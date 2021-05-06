@@ -3,21 +3,16 @@ import glob
 import importlib
 import os
 import numpy as np
-import shutil
 import sklearn.metrics as skmetrics
 import torch
 
-from model import Model
+from models.model_tinysleepnet import Model
 
-from data import load_data, get_subject_files
-from minibatching import (iterate_minibatches,
-                          iterate_batch_seq_minibatches,
-                          iterate_batch_multiple_seq_minibatches)
-from utils import (get_balance_class_oversample,
-                   print_n_samples_each_class,
-                   save_seq_ids,
-                   load_seq_ids)
-from logger import get_logger
+from dataTools import load_data, get_subject_files
+from dataTools.minibatching import (iterate_batch_multiple_seq_minibatches)
+from script.utils import (print_n_samples_each_class,
+                          load_seq_ids)
+from script.logger import get_logger
 
 
 def compute_performance(cm):

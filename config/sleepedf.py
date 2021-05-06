@@ -23,7 +23,7 @@ params = {
 
     # Dataset
     "dataset": "sleepedf",
-    # "data_dir": "./data/sleepedf/sleep-cassette/eeg_fpz_cz",
+    # "data_dir": "./sleepedf/sleep-cassette/eeg_fpz_cz",
     "data_dir": "../tinysleepnet/data/sleepedf/sleep-cassette/eeg_fpz_cz",
     "n_folds": 20,
     "n_subjects": 20,

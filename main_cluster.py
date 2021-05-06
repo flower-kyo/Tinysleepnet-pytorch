@@ -1,3 +1,5 @@
+import warnings
+warnings.filterwarnings('ignore')
 import argparse
 import glob
 import importlib
@@ -6,11 +8,11 @@ import numpy as np
 import shutil
 import torch
 
-from data import load_data, get_subject_files
-from model import Model
-from minibatching import iterate_batch_multiple_seq_minibatches
-from utils import print_n_samples_each_class, load_seq_ids
-from logger import get_logger
+from dataTools import load_data, get_subject_files
+from models.model_tinysleepnet import Model
+from dataTools.minibatching import iterate_batch_multiple_seq_minibatches
+from script.utils import print_n_samples_each_class, load_seq_ids
+from script.logger import get_logger
 
 def train(
     args,
@@ -143,7 +145,7 @@ def train(
     for epoch in range(model.get_current_epoch(), config["n_epochs"]):
         # Create minibatches for training
         shuffle_idx = np.random.permutation(np.arange(len(train_x)))  # shuffle every epoch is good for generalization
-        # Create augmented data
+        # Create augmented dataTools
         percent = 0.1
         aug_train_x = np.copy(train_x)
         aug_train_y = np.copy(train_y)
@@ -253,23 +255,55 @@ def train(
         #     break
 
 
+def run(args, db, gpu, from_fold, to_fold, suffix='', random_seed=42):
+    # Set GPU visible
+
+    # Config file
+    config_file = os.path.join('config', f'{db}.py')
+    spec = importlib.util.spec_from_file_location("*", config_file)
+    config = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(config)
+
+    # Output directory
+    output_dir = f'out_{db}{suffix}'
+
+    assert from_fold <= to_fold
+    assert to_fold < config.params['n_folds']
+
+    # Training
+    for fold_idx in range(from_fold, to_fold+1):
+        train(
+            args=args,
+            config_file=config_file,
+            fold_idx=fold_idx,
+            output_dir=os.path.join(output_dir, 'train'),
+            log_file=os.path.join(output_dir, f'train_{gpu}.log'),
+            restart=True,
+            random_seed=random_seed+fold_idx,
+        )
+
+        # Reset tensorflow graph
+        # tf.reset_default_graph()
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config_file", type=str, required=True)
-    parser.add_argument("--fold_idx", type=int, required=True)
-    parser.add_argument("--output_dir", type=str, default="./output/train")
-    parser.add_argument("--restart", dest="restart", action="store_true")
-    parser.add_argument("--no-restart", dest="restart", action="store_false")
-    parser.add_argument("--log_file", type=str, default="./output/output.log")
+    parser.add_argument("--db", type=str, required=True)
+    parser.add_argument("--gpu", type=int, required=True)
+    parser.add_argument("--from_fold", type=int, required=True)
+    parser.add_argument("--to_fold", type=int, required=True)
+    parser.add_argument("--suffix", type=str, default='')
     parser.add_argument("--random_seed", type=int, default=42)
-    parser.set_defaults(restart=False)
+    parser.add_argument("--test_seq_len", type=int, default=20)
+    parser.add_argument("--test_batch_size", type=int, default=15)
+    parser.add_argument("--n_epochs", type=int, default=200)
     args = parser.parse_args()
 
-    train(
-        config_file=args.config_file,
-        fold_idx=args.fold_idx,
-        output_dir=args.output_dir,
-        log_file=args.log_file,
-        restart=args.restart,
+    run(
+        args=args,
+        db=args.db,
+        gpu=args.gpu,
+        from_fold=args.from_fold,
+        to_fold=args.to_fold,
+        suffix=args.suffix,
         random_seed=args.random_seed,
     )

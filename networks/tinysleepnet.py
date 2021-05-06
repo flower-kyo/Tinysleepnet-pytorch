@@ -68,9 +68,6 @@ class TinySleepNet(nn.Module):
 
 
 
-
-
-
     def forward(self, x, state):
         x = self.cnn(x)
         # input of LSTM must be shape(seq_len, batch, input_size)
