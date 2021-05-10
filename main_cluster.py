@@ -8,8 +8,8 @@ import numpy as np
 import shutil
 import torch
 
-from dataTools import load_data, get_subject_files
-from models.model_tinysleepnet import Model
+from dataTools.data import load_data, get_subject_files
+from models.model_cluster import ClsuterModel
 from dataTools.minibatching import iterate_batch_multiple_seq_minibatches
 from script.utils import print_n_samples_each_class, load_seq_ids
 from script.logger import get_logger
@@ -40,10 +40,10 @@ def train(
     # Create logger
     logger = get_logger(log_file, level="info")
 
-    subject_files = glob.glob(os.path.join(config["data_dir"], "*.npz"))
+    subject_files = glob.glob(os.path.join(args.data_dir, "*.npz"))
 
     # Load subject IDs
-    fname = "{}.txt".format(config["dataset"])
+    fname = "./config/{}.txt".format(config["dataset"])
     seq_sids = load_seq_ids(fname)
     logger.info("Load generated SIDs from {}".format(fname))
     logger.info("SIDs ({}): {}".format(len(seq_sids), seq_sids))
@@ -123,7 +123,8 @@ def train(
     # Create a model
     device = torch.device("cuda:{}".format(args.gpu) if torch.cuda.is_available() else "cpu")
     logger.info(f'using device {args.gpu}')
-    model = Model(
+    model = ClsuterModel(
+        args=args,
         config=config,
         output_dir=output_dir,
         use_rnn=True,
@@ -206,8 +207,9 @@ def train(
         writer.add_scalar(tag="e_f1_score/valid", scalar_value=valid_outs["test/f1_score"], global_step=train_outs["global_step"])
         writer.add_scalar(tag="e_f1_score/test", scalar_value=test_outs["test/f1_score"], global_step=train_outs["global_step"])
         writer.add_scalar(tag="e_f1_score/epoch", scalar_value=epoch + 1, global_step=train_outs["global_step"])
+        writer.add_scalar(tag="nce_loss/train", scalar_value=train_outs["train/nce_loss"], global_step=train_outs["global_step"])
 
-        logger.info("[e{}/{} s{}] TR (n={}) l={:.4f} a={:.1f} f1={:.1f} ({:.1f}s)| "
+        logger.info("[e{}/{} s{}] TR (n={}) l={:.4f} nl={:.4f} a={:.1f} f1={:.1f} ({:.1f}s)| "
                     "VA (n={}) l={:.4f} a={:.1f}, f1={:.1f} ({:.1f}s) | "
                     "TE (n={}) l={:.4f} a={:.1f}, f1={:.1f} ({:.1f}s)".format(
             epoch+1,
@@ -215,6 +217,7 @@ def train(
             train_outs["global_step"],
             len(train_outs["train/trues"]),
             train_outs["train/loss"],
+            train_outs["train/nce_loss"],
             train_outs["train/accuracy"] * 100,
             train_outs["train/f1_score"] * 100,
             train_outs["train/duration"],
@@ -296,6 +299,7 @@ if __name__ == "__main__":
     parser.add_argument("--test_seq_len", type=int, default=20)
     parser.add_argument("--test_batch_size", type=int, default=15)
     parser.add_argument("--n_epochs", type=int, default=200)
+    parser.add_argument("--data_dir", type=str, default='../tinysleepnet/data/sleepedf/sleep-cassette/eeg_fpz_cz')
     args = parser.parse_args()
 
     run(

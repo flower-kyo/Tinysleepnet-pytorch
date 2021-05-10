@@ -40,7 +40,7 @@ def train(
     # Create logger
     logger = get_logger(log_file, level="info")
 
-    subject_files = glob.glob(os.path.join(config["data_dir"], "*.npz"))
+    subject_files = glob.glob(os.path.join(args.data_dir, "*.npz"))
 
     # Load subject IDs
     fname = "./config/{}.txt".format(config["dataset"])
@@ -207,6 +207,7 @@ def train(
         writer.add_scalar(tag="e_f1_score/test", scalar_value=test_outs["test/f1_score"], global_step=train_outs["global_step"])
         writer.add_scalar(tag="e_f1_score/epoch", scalar_value=epoch + 1, global_step=train_outs["global_step"])
 
+
         logger.info("[e{}/{} s{}] TR (n={}) l={:.4f} a={:.1f} f1={:.1f} ({:.1f}s)| "
                     "VA (n={}) l={:.4f} a={:.1f}, f1={:.1f} ({:.1f}s) | "
                     "TE (n={}) l={:.4f} a={:.1f}, f1={:.1f} ({:.1f}s)".format(
@@ -296,6 +297,7 @@ if __name__ == "__main__":
     parser.add_argument("--test_seq_len", type=int, default=20)
     parser.add_argument("--test_batch_size", type=int, default=15)
     parser.add_argument("--n_epochs", type=int, default=200)
+    parser.add_argument("--data_dir", type=str, default='../tinysleepnet/data/sleepedf/sleep-cassette/eeg_fpz_cz')
     args = parser.parse_args()
 
     run(

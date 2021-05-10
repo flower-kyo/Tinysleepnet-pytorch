@@ -71,7 +71,7 @@ class Model:
             x = x.to(self.device)
             y = y.to(self.device)
             w = w.to(self.device)
-            y_pred, state = self.tsn.forward(x, state)
+            y_pred, state, x_nce = self.tsn.forward(x, state)
             state = (state[0].detach(), state[1].detach())
             loss = self.CE_loss(y_pred, y)
             # weight by sample
@@ -144,7 +144,7 @@ class Model:
 
                 # summary(self.tsn, x, state)
                 # exit(0)
-                y_pred, state = self.tsn.forward(x, state)
+                y_pred, state, _ = self.tsn.forward(x, state)
                 state = (state[0].detach(), state[1].detach())
                 loss = self.CE_loss(y_pred, y)
                 # weight by sample

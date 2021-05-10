@@ -8,7 +8,7 @@ import torch
 
 from models.model_tinysleepnet import Model
 
-from dataTools import load_data, get_subject_files
+from dataTools.data import load_data, get_subject_files
 from dataTools.minibatching import (iterate_batch_multiple_seq_minibatches)
 from script.utils import (print_n_samples_each_class,
                           load_seq_ids)
@@ -63,10 +63,10 @@ def predict(
     # Create logger
     logger = get_logger(log_file, level="info")
 
-    subject_files = glob.glob(os.path.join(config["data_dir"], "*.npz"))
+    subject_files = glob.glob(os.path.join(args.data_dir, "*.npz"))
 
     # Load subject IDs
-    fname = "{}.txt".format(config["dataset"])
+    fname = "./config/{}.txt".format(config["dataset"])
     seq_sids = load_seq_ids(fname)
     logger.info("Load generated SIDs from {}".format(fname))
     logger.info("SIDs ({}): {}".format(len(seq_sids), seq_sids))
@@ -221,6 +221,7 @@ if __name__ == "__main__":
     parser.add_argument("--use-best", dest="use_best", action="store_true")
     parser.add_argument("--no-use-best", dest="use_best", action="store_false")
     parser.add_argument("--gpu", type=int, required=True)
+    parser.add_argument("--data_dir", type=str, default='../tinysleepnet/data/sleepedf/sleep-cassette/eeg_fpz_cz')
     parser.set_defaults(use_best=False)
     args = parser.parse_args()
 
