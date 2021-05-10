@@ -75,14 +75,14 @@ class TinySleepNet(nn.Module):
         # x = x.view(self.config['seq_length'], self.config['batch_size'], -1)
         x = x_cnn.view(-1, self.config['seq_length'], 2048)  # batch first == True
         assert x.shape[-1] == 2048
-        x, state = self.rnn(x, state)
+        x_rnn, state = self.rnn(x, state)
         # x = x.view(-1, self.config['n_rnn_units'])
-        x = x.reshape(-1, self.config['n_rnn_units'])
+        x_rnn = x_rnn.reshape(-1, self.config['n_rnn_units'])
         # rnn output shape(seq_length, batch_size, hidden_size)
-        x = self.rnn_dropout(x)
+        x = self.rnn_dropout(x_rnn)
         x = self.fc(x)
 
-        return x, state, x_cnn
+        return x, state, x_cnn, x_rnn
 
 
 

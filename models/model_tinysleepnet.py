@@ -53,6 +53,8 @@ class Model:
     def pass_one_epoch(self):
         self.global_epoch = self.global_epoch + 1
 
+
+
     def train_with_dataloader(self, minibatches):
         self.tsn.train()
         start = timeit.default_timer()
@@ -71,7 +73,7 @@ class Model:
             x = x.to(self.device)
             y = y.to(self.device)
             w = w.to(self.device)
-            y_pred, state, x_nce = self.tsn.forward(x, state)
+            y_pred, state, x_nce, x_rnn = self.tsn.forward(x, state)
             state = (state[0].detach(), state[1].detach())
             loss = self.CE_loss(y_pred, y)
             # weight by sample
@@ -120,6 +122,34 @@ class Model:
         self.global_epoch += 1
         return outputs
 
+    def get_rep(self, minibatches):
+        assert self.config['batch_size'] == 1
+        self.tsn.eval()
+        with torch.no_grad():
+            reps = []
+            for x, y, w, sl, re in minibatches:
+
+                x = torch.from_numpy(x).view(self.config['batch_size'] * self.config['seq_length'], 1,
+                                             3000)  # shape(batch_size* seq_length, in_channels, input_length)
+                y = torch.from_numpy(y)
+                w = torch.from_numpy(w)
+                assert w.sum() == w.shape[0]  # no 0 should in w
+                if re:
+                    state = (torch.zeros(size=(1, self.config['batch_size'], self.config['n_rnn_units'])),
+                             torch.zeros(size=(1, self.config['batch_size'], self.config['n_rnn_units'])))
+                    state = (state[0].to(self.device), state[1].to(self.device))
+                # Carry the states from the previous batches through time  # 在测试时,将上一批样本的lstm状态带入下一批样本
+                x = x.to(self.device)
+                y = y.to(self.device)
+                w = w.to(self.device)
+                y_pred, state, x_nce, x_rnn = self.tsn.forward(x, state)
+                state = (state[0].detach(), state[1].detach())
+                reps.append(x_rnn)
+            reps = torch.cat(reps, dim=0)
+        return reps
+
+
+
     def evaluate_with_dataloader(self, minibatches):
         self.tsn.eval()
         start = timeit.default_timer()
@@ -144,7 +174,7 @@ class Model:
 
                 # summary(self.tsn, x, state)
                 # exit(0)
-                y_pred, state, _ = self.tsn.forward(x, state)
+                y_pred, state, *_ = self.tsn.forward(x, state)
                 state = (state[0].detach(), state[1].detach())
                 loss = self.CE_loss(y_pred, y)
                 # weight by sample
